@@ -1,3 +1,56 @@
+## v1.18.1 (2025-03-12)
+
+### Fix
+
+- rename header
+
+## v1.18.0 (2025-03-12)
+
+### Feat
+
+- add ai-developer-hub flavor
+
+### Fix
+
+- fix linting
+- fix typo
+- remove -docs suffix for consistency
+
+## v1.17.1 (2025-03-03)
+
+### Fix
+
+- prevent rocm-ds using rocm latest version
+- add version_list() definition
+
+## v1.17.0 (2025-02-19)
+
+### Feat
+
+- add rocm-ds to project list
+- add rocm-ds flavor
+
+### Fix
+
+- unify rocm docs menu item
+
+## v1.16.0 (2025-02-11)
+
+### Feat
+
+- add custom javascript to trigger RTD new search interface
+- migrate js files from rtd
+- add javascript function to trigger search model
+
+### Fix
+
+- remove unnecessary js files
+
+### Refactor
+
+- **article_info.py**: Count words with regex
+- **article_info.py**: Change findAll to find_all for bs4 4.13.0
+
 ## v1.15.0 (2025-01-29)
 
 ### Feat
