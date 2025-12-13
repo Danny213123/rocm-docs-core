@@ -68,12 +68,19 @@ class _DefaultSettings:
     # pylint: enable=redefined-builtin
     myst_enable_extensions = _ConfigUnion(
         {
+            "amsmath",
+            "attrs_inline",
             "colon_fence",
+            "deflist",
             "dollarmath",
             "fieldlist",
+            "html_admonition",
             "html_image",
             "replacements",
+            "smartquotes",
+            "strikethrough",
             "substitution",
+            "tasklist",
         }
     )
     myst_heading_anchors = _ConfigDefault(3)
