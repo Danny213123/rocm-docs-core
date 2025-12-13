@@ -41,20 +41,35 @@ def _get_version_from_url(url: str) -> str:
         return ""
 
 
+def _parse_version(version_string: str) -> dict[str, str]:
+    """Parse latest_version.txt and output a dictionary of site_name : latest_version.
+
+    Example:
+    {"ROCm": "7.0.2", "AI-Developer-Hub": "v7.0", "ROCm-DS": "25.05"}
+    """
+    header_latest_version_list = [
+        site_version.split(":") for site_version in version_string.split("\n")
+    ]
+    return {
+        site_version_pair[0].strip(): site_version_pair[1].strip()
+        for site_version_pair in header_latest_version_list
+    }
+
+
 def _add_custom_context(
     app: Sphinx,  # noqa: ARG001
     pagename: str,  # noqa: ARG001
     templatename: str,  # noqa: ARG001
-    context: dict[str, str],
+    context: dict[str, str | dict[str, str]],
     doctree: object,  # noqa: ARG001
 ) -> None:
-    header_latest_version = _get_version_from_url(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/latest_version.txt"
+    latest_version_list = _get_version_from_url(
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/latest_version.txt"
     )
-    context["header_latest_version"] = header_latest_version
+    context["header_latest_version"] = _parse_version(latest_version_list)
 
     header_release_candidate_version = _get_version_from_url(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/release_candidate.txt"
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/release_candidate.txt"
     )
     context["header_release_candidate_version"] = (
         header_release_candidate_version
@@ -94,16 +109,27 @@ def _update_banner(
     if flavor != "rocm":
         return
 
-    if version_type == util.VersionType.LATEST_RELEASE:
+    if version_type == util.VersionType.OTHER_LATEST_RELEASE:
         return
 
     announcement_info: str
+    preview_version = _get_version_from_url(
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/preview_version.txt"
+    )
+    latest_version_string = _get_version_from_url(
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/latest_version.txt"
+    )
+    latest_version = _parse_version(latest_version_string).get("rocm", "latest")
     if version_type == util.VersionType.RELEASE_CANDIDATE:
         announcement_info = "This page contains changes for a test release of ROCm. Read the <a id='rocm-banner' href='https://rocm.docs.amd.com/en/latest/'>latest Linux release of ROCm documentation</a> for your production environments."
     elif version_type == util.VersionType.OLD_RELEASE:
         announcement_info = "This is not the latest version of ROCm documentation. See <a id='rocm-banner' href='https://rocm.docs.amd.com/en/latest/'>ROCm documentation</a> for the latest version."
     elif version_type == util.VersionType.DEVELOPMENT:
         announcement_info = "This page contains proposed changes for a future release of ROCm. Read the <a id='rocm-banner' href='https://rocm.docs.amd.com/en/latest/'>latest Linux release of ROCm documentation</a> for your production environments."
+    elif version_type == util.VersionType.PREVIEW:
+        announcement_info = f"This is ROCm {preview_version} technology preview release documentation. For production use, refer to <a id='rocm-banner' href='https://rocm.docs.amd.com/en/latest/'>ROCm {latest_version} documentation</a>."
+    elif version_type == util.VersionType.ROCM_LATEST_RELEASE:
+        announcement_info = f"The ROCm {preview_version} technology preview release documentation is available at <a id='rocm-banner' href='https://rocm.docs.amd.com/en/{preview_version}-preview/'>ROCm Preview documentation</a>. For production use, continue to use ROCm {latest_version} documentation."
 
     theme_opts.setdefault("announcement", announcement_info)
 
@@ -119,6 +145,14 @@ def _update_theme_options(app: Sphinx) -> None:
         "rocm-docs-home",
         "rocm-blogs",
         "generic",
+        "rocm-ds",
+        "ai-developer-hub",
+        "rocm-ls",
+        "gsplat",
+        "rocm-rag",
+        "amdgpu",
+        "rocm-finance",
+        "rocm-simulation",
     ]
     flavor = theme_opts.get("flavor", "rocm")
     if flavor not in supported_flavors:
@@ -156,11 +190,11 @@ def _update_theme_options(app: Sphinx) -> None:
         )
 
     header_latest_version = _get_version_from_url(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/latest_version.txt"
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/latest_version.txt"
     )
 
     header_release_candidate_version = _get_version_from_url(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/release_candidate.txt"
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/release_candidate.txt"
     )
 
     default_config_opts = {
@@ -169,7 +203,7 @@ def _update_theme_options(app: Sphinx) -> None:
         "notfound_context": {"title": "404 - Page Not Found"},
         "notfound_template": "404.html",
         "html_context": {
-            "header_latest_version": header_latest_version,
+            "header_latest_version": _parse_version(header_latest_version),
             "header_release_candidate_version": header_release_candidate_version,
         },
     }
@@ -189,6 +223,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_js_file("renameVersionLinks.js", loading_method="async")
     app.add_js_file("rdcMisc.js", loading_method="async")
     app.add_js_file("theme_mode_captions.js", loading_method="async")
+    app.add_js_file("search.js", loading_method="defer")
     here = Path(__file__).parent.resolve()
     theme_path = here / "rocm_docs_theme"
     app.add_html_theme("rocm_docs_theme", str(theme_path))

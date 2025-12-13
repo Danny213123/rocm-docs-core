@@ -1,3 +1,254 @@
+## v1.31.1 (2025-12-11)
+
+### Fix
+
+- link change
+
+## v1.31.0 (2025-12-08)
+
+### Feat
+
+- add new flavour Optiq
+- add new flavour Optiq
+
+### Fix
+
+- **themes**: make expansion toolkit headings consistent
+
+## v1.30.1 (2025-11-27)
+
+### Fix
+
+- fix rocm-simulation flavor
+
+## v1.30.0 (2025-11-19)
+
+### Feat
+
+- add rocm-finance & rocm-simulaiton flavors
+
+### Fix
+
+- HIP develop branch update
+
+## v1.29.0 (2025-11-12)
+
+### Feat
+
+- add amdgpu flavor
+
+### Fix
+
+- rename variable to match flavor name to latest_version.txt key name
+- reorder if logic
+
+## v1.28.0 (2025-11-10)
+
+### Feat
+
+- adjust banner content
+- dynamically define preview version
+- add more banner type for preview
+
+### Fix
+
+- rewording
+- rewording
+- change no banner version definition
+- delete extra bracket
+
+## v1.27.0 (2025-10-24)
+
+### Feat
+
+- target latest_versions.txt from new_data branch
+- parse modified latest_version.txt
+- add version list to rocm-ds flavor
+- add new flavour CVS
+
+### Fix
+
+- linting
+- reformat docstring according to linting
+- linting
+- linting
+- add a case considering when html_theme_options is not defined
+- fix typing
+- change the way flavor gets pass down
+- fix header banner error for non-rocm components
+- change version name to match flavor name
+- Radeon page projects.yaml update
+
+### Refactor
+
+- refactor parse version code
+
+## v1.26.0 (2025-10-01)
+
+### Feat
+
+- Set latest for rocm-ls to 25.09
+
+## v1.25.0 (2025-09-25)
+
+### Feat
+
+- Remove ROCm-Rag and gsplat from left hand side menu
+
+## v1.24.1 (2025-09-23)
+
+### Fix
+
+- fix versions.html linking for rocm-ls flavour
+
+## v1.24.0 (2025-09-23)
+
+### Feat
+
+- add monai-internal
+- add monai and ROCm-LS version list
+- fix no new line
+- Add new flavour rocm-rag
+- fix black formatting issue
+- fix bug
+- fix bug
+- Add new flavour gsplat
+
+### Fix
+
+- Change monai development_branch to amd-integration
+
+## v1.23.0 (2025-08-26)
+
+### Feat
+
+- add aqlprofile to project list
+- Add valid versions mapping
+
+### Fix
+
+- add edge cases to SSH pattern matching
+
+## v1.22.0 (2025-07-29)
+
+### Feat
+
+- add configurable version value for the header
+
+## v1.21.1 (2025-06-24)
+
+### Fix
+
+- add missing theme name to supported_flavors list
+
+## v1.21.0 (2025-06-23)
+
+### Feat
+
+- Add rocm-ls project
+- correct project name
+- Add hipcim and rocm-ls theme
+
+## v1.20.1 (2025-06-09)
+
+### Fix
+
+- Pin pydata-sphinx-theme ver to fix sidebar
+
+## v1.20.0 (2025-05-30)
+
+### Feat
+
+- **projects.yaml**: Add new component rocm-compute-viewer to projects.yaml
+
+## v1.19.1 (2025-05-29)
+
+### Fix
+
+- repo publication approved; revert back menu items
+
+## v1.19.0 (2025-05-26)
+
+### Feat
+
+- **projects.yaml**: Add new ROCm-DS components and rocSHMEM to projects.yaml
+
+### Fix
+
+- Update LICENSE.txt
+
+## v1.18.4 (2025-05-02)
+
+### Fix
+
+- remove header tab 'github', 'support' and 'community' due to private status of the repo
+
+## v1.18.3 (2025-05-02)
+
+### Fix
+
+- add a hardcoded change that updates ROCm-DS header version, will implement a more robust solution after EA
+
+## v1.18.2 (2025-04-02)
+
+### Fix
+
+- change label from 'Statement on Forced Labor' to 'Supply Chain Transparency' for consistency with amd.com
+- fix a broken link in the footer
+
+## v1.18.1 (2025-03-12)
+
+### Fix
+
+- rename header
+
+## v1.18.0 (2025-03-12)
+
+### Feat
+
+- add ai-developer-hub flavor
+
+### Fix
+
+- fix linting
+- fix typo
+- remove -docs suffix for consistency
+
+## v1.17.1 (2025-03-03)
+
+### Fix
+
+- prevent rocm-ds using rocm latest version
+- add version_list() definition
+
+## v1.17.0 (2025-02-19)
+
+### Feat
+
+- add rocm-ds to project list
+- add rocm-ds flavor
+
+### Fix
+
+- unify rocm docs menu item
+
+## v1.16.0 (2025-02-11)
+
+### Feat
+
+- add custom javascript to trigger RTD new search interface
+- migrate js files from rtd
+- add javascript function to trigger search model
+
+### Fix
+
+- remove unnecessary js files
+
+### Refactor
+
+- **article_info.py**: Count words with regex
+- **article_info.py**: Change findAll to find_all for bs4 4.13.0
+
 ## v1.15.0 (2025-01-29)
 
 ### Feat

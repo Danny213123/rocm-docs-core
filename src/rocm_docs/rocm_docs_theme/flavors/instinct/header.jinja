@@ -1,8 +1,10 @@
 {% macro top_level_header(branch, latest_version, release_candidate_version) -%}
-    {% if branch in ["develop", "master", "main", "amd-master", "amd-staging"] %}
+    {% if docs_header_version %}
+        {% set version_name = docs_header_version %}
+    {% elif branch in ["develop", "master", "main", "amd-master", "amd-staging"] %}
         {% set version_name = "Future Release" %}
     {% elif branch == "latest" %}
-        {% set version_name = latest_version %}
+        {% set version_name = latest_version["rocm"] %}
     {% else %}
         {% set version_name = branch %}
     {% endif %}
@@ -24,7 +26,7 @@ set nav_secondary_items = theme_nav_secondary_items if theme_nav_secondary_items
     "Community": "https://github.com/ROCm/ROCm/discussions",
     "Blogs": "https://rocm.blogs.amd.com/",
     "ROCm Developer Hub": "https://www.amd.com/en/developer/resources/rocm-hub.html",
-    "ROCm&#8482; docs": "https://rocm.docs.amd.com",
+    "ROCm&#8482; Docs": "https://rocm.docs.amd.com",
     "Support": (theme_repository_url + "/issues/new/choose") if theme_repository_url else "#"
 }
 %}
