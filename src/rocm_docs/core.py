@@ -58,6 +58,15 @@ class _ConfigMerge(_ConfigUpdater[dict[str, Any]]):
             current_setting.setdefault(item[0], item[1])
 
 
+class _ConfigEnableExtensions(_ConfigUpdater[set[str]]):
+    def __call__(self, key: str, app: Sphinx) -> None:
+        current = getattr(app.config, key)
+        if isinstance(current, list):
+            current.extend([x for x in self.default if x not in current])
+        elif isinstance(current, set):
+            current.update(self.default)
+
+
 class _DefaultSettings:
     author = _ConfigDefault(
         'Advanced Micro Devices <a href="https://">Disclaimer and'
@@ -66,7 +75,7 @@ class _DefaultSettings:
     # pylint: disable=redefined-builtin
     copyright = _ConfigDefault("2022-2023, Advanced Micro Devices Ltd")
     # pylint: enable=redefined-builtin
-    myst_enable_extensions = _ConfigUnion(
+    myst_enable_extensions = _ConfigEnableExtensions(
         {
             "amsmath",
             "attrs_inline",
