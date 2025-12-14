@@ -97,6 +97,7 @@ class _DefaultSettings:
     epub_show_urls = _ConfigDefault("footnote")
     exclude_patterns = _ConfigExtend(["_build", "Thumbs.db", ".DS_Store"])
     numfig = _ConfigDefault(True)
+    math_numfig = _ConfigDefault(True)
     linkcheck_timeout = _ConfigDefault(10)
     linkcheck_request_headers = _ConfigMerge(
         {
