@@ -37,7 +37,7 @@ with context
                 <ul class="navbar-nav nav-mega me-auto mb-2 mb-lg-0 col-xl-10">
                     {% for name, url in nav_secondary_items.items() %}
                         <li class="nav-item">
-                            <a class="nav-link top-level header-menu-links" href="{{ url }}" id="nav{{ name.lower()|replace(' ','-') }}" role="button" aria-expanded="false" target="_blank" >
+                            <a class="nav-link top-level header-menu-links" href="{{ url }}" id="nav{{ name.lower()|replace(' ','-') }}" role="button" aria-expanded="false" >
                                 {{ name }}
                             </a>
                         </li>

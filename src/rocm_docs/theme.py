@@ -140,7 +140,7 @@ def _update_theme_options(app: Sphinx) -> None:
 
     theme_opts.setdefault(
         "article_header_start",
-        ["components/toggle-primary-sidebar.html", "breadcrumbs.html"],
+        ["components/toggle-primary-sidebar.html"],
     )
 
     if hasattr(app.config, "projects_version_type"):
