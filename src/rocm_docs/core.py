@@ -20,7 +20,7 @@ from pydata_sphinx_theme.utils import (  # type: ignore[import-untyped]
 from sphinx.application import Sphinx
 from sphinx.config import Config
 
-from rocm_docs import article_info
+from rocm_docs import article_info, llms
 
 T = TypeVar("T")
 
@@ -87,7 +87,7 @@ class _DefaultSettings:
     external_toc_exclude_missing = _ConfigDefault(False)
     epub_show_urls = _ConfigDefault("footnote")
     exclude_patterns = _ConfigExtend(["_build", "Thumbs.db", ".DS_Store"])
-    numfig = _ConfigDefault(True)
+    numfig = _ConfigDefault(False)
     linkcheck_timeout = _ConfigDefault(10)
     linkcheck_request_headers = _ConfigMerge(
         {
@@ -117,6 +117,11 @@ def _force_notfound_prefix(app: Sphinx, _: Config) -> None:
 
     components = urllib.parse.urlparse(os.environ["READTHEDOCS_CANONICAL_URL"])
     app.config.notfound_urls_prefix = components.path
+
+
+def _generate_llms_full(app: Sphinx, exception: object) -> None:
+    if app.config.rocm_docs_generate_llms_full:
+        llms.generate_llms_full(app, exception)
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
@@ -155,9 +160,16 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value(
         "article_pages", default=[], rebuild="html", types=list
     )
+    app.add_config_value(
+        "rocm_docs_generate_llms_full",
+        default=False,
+        rebuild="html",
+        types=bool,
+    )
 
     # Run before notfound.extension sees the config (default priority(=500))
     app.connect("config-inited", _force_notfound_prefix, priority=400)
     app.connect("config-inited", _DefaultSettings.update_config)
     app.connect("build-finished", article_info.set_article_info, priority=1000)
+    app.connect("build-finished", _generate_llms_full)
     return {"parallel_read_safe": True, "parallel_write_safe": True}

@@ -146,7 +146,7 @@ def test_doxygen_html_invalid(
 @pytest.mark.usefixtures("_no_unexpected_warnings")
 @pytest.mark.parametrize(
     "current_project",
-    [None, rocm_docs.projects._Project("", [], "", None)],
+    [None, rocm_docs.projects._Project("", [], "", [], None)],
     ids=["no_current_project", "not_set"],
 )
 def test_set_doxygen_html_not_defined(
@@ -171,6 +171,24 @@ def test_set_doxygen_html_mismatched(expect_log: ExpectLogFixture) -> None:
         ' differs from projects.yaml value: "does-not-match"',
     ):
         rocm_docs.projects._set_doxygen_html(
-            app, rocm_docs.projects._Project("", [], "", "does-not-match")
+            app, rocm_docs.projects._Project("", [], "", [], "does-not-match")
         )
     assert app.config.doxygen_html == "must-not-be-changed"
+
+
+@pytest.mark.parametrize(
+    ("current_branch", "expected"),
+    [
+        ("latest", "latest"),
+        ("stable", "stable"),
+        ("docs-7.2.0", "docs-7.2.0"),
+        ("7.13.0-preview", "7.13.0-preview"),
+        ("8.0.0-preview", "8.0.0-preview"),
+        ("some-feature-branch", "latest"),
+    ],
+)
+def test_get_static_version(current_branch: str, expected: str) -> None:
+    assert (
+        rocm_docs.projects._Project.get_static_version(current_branch, None)
+        == expected
+    )

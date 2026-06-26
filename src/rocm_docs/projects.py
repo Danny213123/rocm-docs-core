@@ -22,6 +22,7 @@ import github
 import requests
 import sphinx.util.logging
 import yaml
+from packaging.version import Version
 from pydata_sphinx_theme.utils import (  # type: ignore[import-untyped]
     config_provided_by_user,
 )
@@ -29,7 +30,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import ExtensionError
 
-from rocm_docs import formatting, util
+from rocm_docs import formatting, theme, util
 
 if sys.version_info < (3, 11):
     import importlib.abc as importlib_abc
@@ -43,6 +44,8 @@ ProjectMapping: TypeAlias = tuple[str, Inventory]
 
 DEFAULT_INTERSPHINX_REPOSITORY = "ROCm/rocm-docs-core"
 DEFAULT_INTERSPHINX_BRANCH = "develop"
+DOCS_VERSION_PATTERN = r"^docs-\d+\.\d+\.\d+$"
+PREVIEW_VERSION_PATTERN = r"^\d+\.\d+\.\d+-preview$"
 
 logger = sphinx.util.logging.getLogger(__name__)
 
@@ -60,6 +63,7 @@ class _Project:
     target: str
     inventory: list[str | None]
     development_branch: str
+    valid_versions: list[str | None]
     doxygen_html: str | None = None
 
     @staticmethod
@@ -116,6 +120,7 @@ class _Project:
                 entry,
                 [cls.default_value("inventory")],
                 cls.default_value("development_branch"),
+                [],  # No valid_versions for simple string entries
             )
 
         # It's okay to just index into optional fields, because jsonschema
@@ -125,10 +130,18 @@ class _Project:
         if not isinstance(inventory, list):
             inventory = [inventory]
 
+        valid_versions = entry.get("valid_versions", [])
+        assert valid_versions is None or isinstance(valid_versions, list | str)
+        if not isinstance(valid_versions, list):
+            valid_versions = (
+                [valid_versions] if valid_versions is not None else []
+            )
+
         return _Project(
             cast(str, entry["target"]),
             inventory,
             cast(str, entry["development_branch"]),
+            valid_versions,
             cls._get_doxygen_html(entry),
         )
 
@@ -148,7 +161,13 @@ class _Project:
             return current_branch
 
         # Past release versions always with docs/
-        if current_branch.startswith("docs-"):
+        regex = re.compile(DOCS_VERSION_PATTERN)
+        if regex.match(current_branch):
+            return current_branch
+
+        # Pre-release preview builds (e.g. 7.13.0-preview) link to the matching
+        # preview version on each sister project.
+        if re.match(PREVIEW_VERSION_PATTERN, current_branch):
             return current_branch
 
         # Anything besides the canonical development branch links to latest docs
@@ -160,6 +179,55 @@ class _Project:
             return "latest"
 
         return None
+
+    def _find_best_valid_version(self, target_version: str) -> str:
+        """Find the best matching valid version for this project.
+
+        If valid_versions is empty, return the target_version as-is.
+        Otherwise, find the closest valid version.
+        """
+        if not self.valid_versions:
+            return target_version
+
+        # If target version is in valid versions, use it directly
+        if target_version in self.valid_versions:
+            return target_version
+
+        # For specific docs- versions, find the closest valid version
+        regex = re.compile(DOCS_VERSION_PATTERN)
+        if regex.match(target_version):
+            doc_versions = [
+                version
+                for version in self.valid_versions
+                if version and regex.match(version)
+            ]
+            if doc_versions:
+                try:
+
+                    def calc_version(version_str: str) -> Version:
+                        return Version(version_str.replace("docs-", ""))
+
+                    target_version_value = calc_version(target_version)
+                    valid_versions = [
+                        (calc_version(v), v) for v in doc_versions
+                    ]
+                    valid_versions.sort(reverse=True)  # sort versions
+
+                    # Find first version <= target
+                    for version_value, version_string in valid_versions:
+                        if version_value <= target_version_value:
+                            return version_string
+
+                    # Return last valid version, if target version is smaller
+                    # than any valid versions.
+                    return valid_versions[-1][1]
+                except ValueError:
+                    # If we can't parse the version, use the the target_version
+                    # as-is.
+                    pass
+
+        # Fallback: return the target_version as-is.
+        return target_version
 
     def evaluate(self, static_version: str | None) -> None:
         """Evaluate ${version} placeholders in the inventory and target values.
@@ -173,6 +241,10 @@ class _Project:
             if static_version is not None
             else self.development_branch
         )
+
+        # Apply valid_versions filtering
+        version = self._find_best_valid_version(version)
+
         gh_version = version
 
         # edge case
@@ -184,13 +256,13 @@ class _Project:
         elif "${gh_version}" in self.target:
             self.target = self.target.replace("${gh_version}", gh_version)
 
-        for item in self.inventory:
+        for i, item in enumerate(self.inventory):
             if item is None:
                 continue
             if "${version}" in item:
-                item = item.replace("${version}", version)
+                self.inventory[i] = item.replace("${version}", version)
             elif "${gh_version}" in item:
-                item = item.replace("${gh_version}", gh_version)
+                self.inventory[i] = item.replace("${gh_version}", gh_version)
 
     @property
     def mapping(self) -> ProjectMapping:
@@ -339,15 +411,24 @@ def _get_context(
 
 
 def _update_theme_configs(
-    app: Sphinx, current_project: _Project | None, current_branch: str
+    app: Sphinx,
+    current_project: _Project | None,
+    current_branch: str,
+    flavor: str,
 ) -> None:
     """Update configurations for use in theme.py"""
-    latest_version = requests.get(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/latest_version.txt"
-    ).text.strip("\r\n")
-    latest_version_string = f"docs-{latest_version}"
+    latest_version_list = requests.get(
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/latest_version.txt"
+    ).text.strip()
+    latest_version_dict = theme._parse_version(latest_version_list)
+    latest_version = latest_version_dict.get(flavor, "latest")
+    latest_version_string_list = ["latest"]
+    if latest_version != "latest":
+        # Some component's docs branch has "docs-" prefix, others do not
+        latest_version_string_list += [f"docs-{latest_version}", latest_version]
+
     release_candidate = requests.get(
-        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/data/release_candidate.txt"
+        "https://raw.githubusercontent.com/ROCm/rocm-docs-core/new_data/release_candidate.txt"
     ).text.strip("\r\n")
     release_candidate_string = f"docs-{release_candidate}"
 
@@ -357,8 +438,12 @@ def _update_theme_configs(
 
     doc_branch_pattern = r"^docs-\d+\.\d+\.\d+$"
 
-    if current_branch in [latest_version_string, "latest"]:
-        app.config.projects_version_type = util.VersionType.LATEST_RELEASE
+    if flavor == "rocm" and current_branch in latest_version_string_list:
+        app.config.projects_version_type = util.VersionType.ROCM_LATEST_RELEASE
+    elif flavor != "rocm" and current_branch in latest_version_string_list:
+        app.config.projects_version_type = util.VersionType.OTHER_LATEST_RELEASE
+    elif current_branch.endswith("preview"):
+        app.config.projects_version_type = util.VersionType.PREVIEW
     elif current_branch.startswith(release_candidate_string):
         app.config.projects_version_type = util.VersionType.RELEASE_CANDIDATE
     elif re.match(doc_branch_pattern, current_branch):
@@ -443,11 +528,20 @@ def _update_config(app: Sphinx, _: Config) -> None:
         Path(app.srcdir, app.config.external_toc_path),
         context,
     )
+
+    if not config_provided_by_user(app, "html_theme_options"):
+        app.config.html_theme_options = {"flavor": "rocm"}
+
     # Store the context to be referenced later
     app.config.projects_context = context
 
     _set_doxygen_html(app, current_project)
-    _update_theme_configs(app, current_project, branch)
+    _update_theme_configs(
+        app,
+        current_project,
+        branch,
+        app.config.html_theme_options.get("flavor", "rocm"),
+    )
 
 
 def _setup_projects_context(
